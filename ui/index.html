@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <title>BEC Bot</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script type="module" src="../dist/renderer.js"></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand"><img src="assets/aspire.png" alt="Aspire" /><span>Analyst Toolkit</span></div>
+    <div class="nav-label">BEC Bot · Compromises</div>
+    <nav aria-label="Investigation tools">
+      <button class="nav-item active" data-page="session" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3v5m8-5v5M5 8h14v4a7 7 0 0 1-14 0zm7 11v3" /></svg><span>Session</span><span class="nav-arrow" aria-hidden="true">↗</span></button>
+    </nav>
+    <details id="entra-nav" class="nav-group" open>
+      <summary><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" /></svg><span>Entra ID / Azure</span></summary>
+      <nav aria-label="Entra ID and Azure tools">
+      <button class="nav-item" data-page="sign-ins"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3h5v18h-5M3 12h12m-4-4 4 4-4 4" /></svg><span>Sign in Exports</span><span class="nav-arrow" aria-hidden="true">↗</span></button>
+      <button class="nav-item" data-page="audit-logs"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18H6zM9 8h6M9 12h6M9 16h4" /></svg><span>Audit Logs</span><span class="nav-arrow" aria-hidden="true">↗</span></button>
+      <button class="nav-item" data-page="risk-detections"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 3 7v5c0 5 9 9 9 9s9-4 9-9V7zM12 8v5m0 3h.01" /></svg><span>Risk Detections</span><span class="nav-arrow" aria-hidden="true">↗</span></button>
+      <button class="nav-item" data-page="devices"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="12" rx="2" /><path d="M2 20h20M8 16l-1 4m9-4 1 4" /></svg><span>Devices</span><span class="nav-arrow" aria-hidden="true">↗</span></button>
+      <button class="nav-item" data-page="app-consents"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><path d="m14 17 3 3 5-6" /></svg><span>App Consents</span><span class="nav-arrow" aria-hidden="true">↗</span></button>
+      </nav>
+    </details>
+    <details id="m365-nav" class="nav-group" open>
+      <summary><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" /></svg><span>Microsoft 365</span></summary>
+      <nav aria-label="Microsoft 365 tools">
+        <button class="nav-item" data-page="uals"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18H6zM9 8h6M9 12h6M9 16h4" /></svg><span>UALs</span><span class="nav-arrow" aria-hidden="true">↗</span></button>
+      </nav>
+    </details>
+    <div class="nav-label">Toolkit · BAU investigations</div>
+    <nav aria-label="BAU tools"><button class="nav-item" data-page="toolkit"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="7" /><path d="m15 15 6 6M3 10h14M10 3c-4 4-4 10 0 14 4-4 4-10 0-14" /></svg><span>OSINT Toolkit</span><span class="nav-arrow" aria-hidden="true">↗</span></button><button class="nav-item" data-page="kql-library"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v18H5a2 2 0 0 1 0-4h14M5 3a2 2 0 0 0-2 2v14m7-12-2 3 2 3m4-6 2 3-2 3" /></svg><span>KQL Library</span><span class="nav-arrow" aria-hidden="true">↗</span></button><button class="nav-item" data-page="browser-history"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l4 2" /></svg><span>Browser History</span><span class="nav-arrow" aria-hidden="true">↗</span></button><button class="nav-item" data-page="data-tools"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5-6 7 6 7m8-14 6 7-6 7M14 3l-4 18" /></svg><span>Data Tools</span><span class="nav-arrow" aria-hidden="true">↗</span></button><button class="nav-item" data-page="notepad"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v18H5zM8 8h8M8 12h8M8 16h5" /></svg><span>Notepad</span><span class="nav-arrow" aria-hidden="true">↗</span></button></nav>
+    <div class="nav-label">Workspace</div>
+    <nav aria-label="Preferences"><button class="nav-item" data-page="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h16" /><rect x="8" y="3" width="4" height="4" rx="1" /><rect x="14" y="10" width="4" height="4" rx="1" /><rect x="6" y="17" width="4" height="4" rx="1" /></svg><span>Settings</span><span class="nav-arrow" aria-hidden="true">↗</span></button></nav>
+    <div class="sidebar-bottom"><span class="status-dot"></span> Local workspace<span class="version">v0.1</span></div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar"><div><span class="muted">Workspace</span><span class="slash">/</span><span id="breadcrumb">Session</span></div><div class="shared-session"><span id="connection-summary" role="status"><span id="graph-connection" class="status-badge" data-tone="neutral">Graph: disconnected</span> <span id="exchange-connection" class="status-badge" data-tone="neutral">Exchange: disconnected</span></span><button id="open-session">Session</button></div></header>
+    <main>
+      <div class="page-heading"><h1 id="page-title">Session</h1><p class="description" id="page-description"></p></div>
+      <p id="operation-status" role="status">Create an investigation session to begin.</p>
+    <section id="session-module" class="session-panel" aria-label="Shared investigation connection">
+      <div class="section-label">Connections</div>
+      <div class="connection-cards"><div id="graph-card" class="connection-card" data-tone="neutral"><strong>Microsoft Graph</strong><span id="graph-card-status">Disconnected</span></div><div id="exchange-card" class="connection-card" data-tone="neutral"><strong>Exchange Online</strong><span id="exchange-card-status">Disconnected</span></div></div>
+      <div class="control-row"><label>Authentication method<select id="auth-mode"><option value="browser">Open browser automatically + enter code</option><option value="device">Device code (open browser manually)</option></select></label></div>
+      <div class="control-row"><label>Tenant ID (GUID)<input id="tenant" placeholder="00000000-0000-0000-0000-000000000000" autocomplete="off" /></label><button id="install">Install modules</button><button id="connect" class="primary">Connect Graph</button><button id="exchange">Connect Exchange</button><button id="reset">New / disconnect</button></div>
+      <p id="session-status" role="status">Disconnected. Connect Graph to begin investigation.</p>
+      <p id="investigation-log" class="help">Starting investigation log…</p>
+      <details><summary>Session output / sign-in instructions</summary><pre id="session-output" aria-live="polite">PowerShell 7 required. Device sign-in instructions will appear here.</pre></details>
+    </section>
+      <section id="sign-in-module" hidden>
+        <form id="query-form" class="query-panel">
+          <div class="section-label">Sign-in query</div>
+          <div class="control-row"><label>User principal name<input id="user" type="email" required placeholder="user@contoso.com" autocomplete="off" /></label><label>Time range<select id="range"><option value="24">Last 24 hours</option><option value="48">Last 48 hours</option><option value="72">Last 72 hours</option><option value="168">Last week</option><option value="custom">Custom range</option></select></label></div>
+          <div class="control-row" id="custom-range" hidden><label>Start (local time)<input id="start" type="datetime-local" /></label><label>End (local time, exclusive)<input id="end" type="datetime-local" /></label></div>
+          <div class="control-row"><button id="collect" type="submit" class="primary" disabled>Collect sign-ins</button><span class="muted">Interactive + non-interactive · times shown in UTC</span></div>
+        </form>
+        <section class="results-panel" aria-label="Sign-in results">
+          <div class="panel-header"><h2 id="results-heading">Sign-ins · 0 records</h2><div class="export-buttons"><button id="export-csv" disabled>Export CSV</button><button id="export-json" disabled>Export raw JSON</button></div></div>
+          <p id="collection-info" class="help">Results stay in memory until exported or the session is cleared.</p>
+          <p class="status-legend"><span class="status-badge" data-tone="success">Success</span><span class="status-badge" data-tone="failure">Failed</span><span class="status-badge" data-tone="warning">Interrupted / MFA</span><span class="status-badge" data-tone="neutral">Unknown</span></p>
+          <div class="control-row result-tools"><label>Search results<input id="search" type="search" placeholder="IP, application, location, status…" /></label><label>Event type<select id="type-filter"><option value="all">All types</option><option value="interactive">Interactive</option><option value="noninteractive">Non-interactive</option></select></label></div>
+          <div class="control-row result-tools selection-tools"><span id="selection-count">0 sign-ins selected</span><button id="select-page">Select this page</button><button id="clear-selection" disabled>Clear selection</button><button id="inspect-ca" class="primary" disabled>View Conditional Access</button></div>
+          <div class="table-scroll"><table><thead><tr><th>Select</th><th>Time (UTC)</th><th>Type</th><th>Application</th><th>IP address</th><th>Location</th><th>Result</th><th>Details</th></tr></thead><tbody id="results-body"></tbody></table></div>
+          <div class="pagination"><button id="previous">Previous</button><span id="page-info">No results</span><button id="next">Next</button></div>
+          <details id="record-details"><summary>Selected record · raw data</summary><pre id="record-json">Select a record to inspect all returned fields.</pre></details>
+        </section>
+        <section id="ca-panel" class="results-panel" aria-labelledby="ca-heading" hidden>
+          <div class="panel-header"><h2 id="ca-heading">Conditional Access · selected sign-ins</h2><span class="count">CAPTURED EVALUATIONS</span></div>
+          <p id="ca-summary" class="help"></p>
+          <p class="help">Outcomes below are per-policy evaluations at sign-in time. Report-only outcomes are shown separately from enforced results. Current policy definitions are not fetched.</p>
+          <div id="ca-events"></div>
+          <details id="ca-policy-details"><summary>Selected policy evaluation · raw data</summary><pre id="ca-policy-json">Choose a policy evaluation to inspect its raw fields.</pre></details>
+        </section>
+      </section>
+      <section id="audit-module" hidden>
+        <form id="audit-form" class="query-panel">
+          <div class="section-label">Entra directory audit query</div>
+          <div class="control-row"><label>Affected user principal name<input id="audit-user" type="email" required placeholder="user@contoso.com" autocomplete="off" /></label><label>Time range<select id="audit-range"><option value="24">Last 24 hours</option><option value="48">Last 48 hours</option><option value="72">Last 72 hours</option><option value="168">Last week</option><option value="custom">Custom range</option></select></label></div>
+          <div id="audit-custom-range" class="control-row" hidden><label>Start (local time)<input id="audit-start" type="datetime-local" /></label><label>End (local time, exclusive)<input id="audit-end" type="datetime-local" /></label></div>
+          <div class="control-row"><button id="audit-collect" class="primary" type="submit" disabled>Collect audit logs</button><span class="muted">Actions by or targeting the account · times shown in UTC</span></div>
+          <p class="help">Scans directory audit events in the selected window and matches the account by object ID or UPN. Mailbox and Purview audit events are separate sources.</p>
+        </form>
+        <section class="results-panel" aria-label="Entra audit results">
+          <div class="panel-header"><h2 id="audit-heading">Audit logs · 0 events</h2><div class="export-buttons"><button id="audit-export-csv" disabled>Export CSV</button><button id="audit-export-json" disabled>Export raw JSON</button></div></div>
+          <p id="audit-info" class="help">No collection run yet.</p>
+          <div class="control-row result-tools"><label>Search events<input id="audit-search" type="search" placeholder="Activity, actor, target, changed property…" /></label><label>Activity<select id="audit-category"><option value="all">All activities</option><option value="password">Password changes / resets</option><option value="mfa">MFA / authentication methods</option><option value="roles">Role assignments</option><option value="consent">App consent / permission grants</option><option value="devices">Device registration / changes</option><option value="groups">Group membership / changes</option><option value="other">Other activities</option></select></label></div>
+          <div class="control-row result-tools"><label>Account involvement<select id="audit-relation"><option value="all">Actor or target</option><option value="actor">Performed by account</option><option value="target">Targeting account</option><option value="both">Both actor and target</option></select></label><label>Result<select id="audit-result"><option value="all">All results</option><option value="success">Success</option><option value="failure">Failure</option><option value="other">Other / unknown</option></select></label></div>
+          <p class="help audit-filter-note">Activity filters classify event names and property names. All activities includes every matched event. Exports include the complete collection.</p>
+          <div class="table-scroll"><table><thead><tr><th>Time (UTC)</th><th>Activity</th><th>Category</th><th>Actor</th><th>Target(s)</th><th>Account involvement</th><th>Result</th><th>Details</th></tr></thead><tbody id="audit-body"></tbody></table></div>
+          <div class="pagination"><button id="audit-previous">Previous</button><span id="audit-page-info">0 events</span><button id="audit-next">Next</button></div>
+          <details id="audit-record-details"><summary>Selected audit event · raw data and modified properties</summary><pre id="audit-record-json">Select an event to inspect its full record.</pre></details>
+        </section>
+      </section>
+      <section id="uals-module" class="query-panel" hidden>
+      </section>
+      <section id="risk-detections-module" class="identity-module" hidden></section>
+      <section id="devices-module" class="identity-module" hidden></section>
+      <section id="app-consents-module" class="identity-module" hidden></section>
+      <section id="toolkit-module" hidden>
+        <form id="osint-form" class="query-panel">
+          <label>IP address or file hash<input id="indicator" required autocomplete="off" spellcheck="false" placeholder="IPv4, IPv6, MD5, SHA-1 or SHA-256" /></label>
+          <p class="help">IP reputation · MD5 / SHA-1 / SHA-256 file reports · Defanged IPs accepted</p>
+          <button id="lookup" class="primary" type="submit">Check indicator</button>
+        </form>
+        <p id="osint-status" role="status">Configure provider keys in Settings.</p>
+        <div id="osint-results"></div>
+      </section>
+      <section id="notepad-module" hidden><div id="notepad-surface"></div></section>
+      <section id="data-module" hidden>
+        <div class="data-toolbar">
+          <label>Operation<select id="data-operation"><option value="defang">Defang IPs / URLs</option><option value="refang">Refang IPs / URLs</option><option value="base64-encode">Base64 encode</option><option value="base64-decode">Base64 decode</option><option value="json">JSON beautify</option></select></label>
+          <label id="data-encoding-field" hidden>Text encoding<select id="data-encoding"><option value="utf8">UTF-8</option><option value="utf16le">UTF-16LE</option></select></label>
+          <label id="data-indent-field" hidden>Indentation<select id="data-indent"><option value="2">2 spaces</option><option value="4">4 spaces</option><option value="tab">Tabs</option></select></label>
+          <button id="data-clear">Clear</button>
+        </div>
+        <div class="data-editors">
+          <section><div class="data-editor-heading"><label for="data-input">Input</label></div><textarea id="data-input" spellcheck="false" placeholder="Paste text here…"></textarea></section>
+          <section><div class="data-editor-heading"><label for="data-output">Output</label><button id="data-use-output" disabled>Use as input</button><button id="data-copy" disabled>Copy output</button></div><textarea id="data-output" readonly spellcheck="false"></textarea></section>
+        </div>
+        <p id="data-status" class="help" role="status"></p>
+      </section>
+      <section id="history-module" hidden>
+        <div class="query-panel">
+          <div class="control-row"><label>Browser<select id="history-browser"><option value="auto">Auto detect</option><option value="chrome">Chrome</option><option value="edge">Edge</option><option value="firefox">Firefox</option></select></label><button id="history-import" class="primary">Import history</button><button id="history-clear" disabled>Clear</button></div>
+          <p class="help">Select a closed-browser copy of Chrome/Edge's <code>History</code> or Firefox's <code>places.sqlite</code>. Keep a matching <code>-wal</code> file alongside it if present. Original files remain unchanged.</p>
+          <p id="history-source" class="help">No history imported.</p>
+          <div class="control-row"><label>Search URL or title<input id="history-search" type="search" placeholder="Domain, URL or page title" /></label><label>Protocol<select id="history-protocol"><option value="all">All protocols</option><option value="https">HTTPS</option><option value="http">HTTP</option><option value="other">Other</option></select></label><label>Visit type<select id="history-type"><option value="all">All types</option><option value="link">Link</option><option value="typed">Typed</option><option value="reload">Reload</option><option value="redirect">Redirect</option><option value="other">Other</option></select></label></div>
+          <div class="control-row"><label>Start (local time)<input id="history-start" type="datetime-local" /></label><label>End (local time, exclusive)<input id="history-end" type="datetime-local" /></label></div>
+        </div>
+        <p id="history-status" role="status" class="help"></p>
+        <section class="results-panel">
+          <div class="panel-header"><h2 id="history-summary"></h2><div class="export-buttons"><button id="history-copy-urls" disabled>Copy filtered URLs</button><button id="history-copy-visits" disabled>Copy filtered visits</button></div></div>
+          <p class="help">One row per recorded visit · Times in UTC · URL visits = stored browser count, independent of filters.</p>
+          <div class="table-scroll"><table><thead><tr><th>Visit time (UTC)</th><th>Page / URL</th><th>Domain</th><th>Visit type</th><th>URL visits</th><th>Duration (s)</th><th>Actions</th></tr></thead><tbody id="history-body"></tbody></table></div>
+          <div class="pagination"><button id="history-previous" disabled>Previous</button><span id="history-page"></span><button id="history-next" disabled>Next</button></div>
+          <details id="history-record"><summary>Visit details / import provenance</summary><pre id="history-record-json"></pre></details>
+        </section>
+      </section>
+      <section id="kql-module" hidden>
+        <div class="kql-layout">
+          <aside class="kql-list-panel" aria-label="Saved queries">
+            <button id="kql-new" class="primary">Add query</button>
+            <label class="sr-only" for="kql-search">Search queries</label><input id="kql-search" type="search" placeholder="Search queries" />
+            <div id="kql-list"></div>
+          </aside>
+          <section class="kql-editor" aria-label="Query editor">
+            <label>Query name<input id="kql-name" maxlength="160" autocomplete="off" placeholder="Query name" /></label>
+            <div class="kql-editor-body"><label class="kql-template-field"><span class="kql-field-heading">Query template</span><textarea id="kql-template" spellcheck="false" maxlength="200000" placeholder="Paste your KQL query here…"></textarea></label>
+            <p class="help">Use {Name} placeholders. Values are inserted as typed; include quotes in the template where needed.</p>
+            <div class="kql-insert"><label class="sr-only" for="kql-placeholder">Placeholder name</label><input id="kql-placeholder" placeholder="Placeholder name" autocomplete="off" /><button id="kql-insert">Insert placeholder</button></div>
+            <div class="kql-actions"><span id="kql-save-state" class="help"></span><button id="kql-delete" class="danger">Delete</button><button id="kql-save" class="primary">Save query</button></div>
+            <div id="kql-delete-prompt" class="kql-delete-prompt" hidden><span>Delete this query?</span><button id="kql-delete-confirm" class="danger">Delete query</button><button id="kql-delete-cancel">Cancel</button></div>
+            </div>
+          </section>
+          <section class="kql-output" aria-label="Query parameters and output">
+            <div class="kql-parameter-group"><h2>Parameters</h2><div id="kql-parameters"></div></div>
+            <div class="kql-final-body"><div class="kql-output-heading"><h2>Final query</h2><button id="kql-copy">Copy query</button></div>
+            <label class="sr-only" for="kql-final">Final query</label><textarea id="kql-final" readonly spellcheck="false"></textarea></div>
+          </section>
+        </div>
+        <p id="kql-status" class="help" role="status"></p>
+      </section>
+      <section id="settings-module" class="query-panel" hidden>
+        <h2>OSINT API keys</h2>
+        <p class="help">Encrypted for your Windows account. Leave a field blank to keep its saved key, or select Remove. Saved keys are never displayed.</p>
+        <form id="keys-form">
+          <div id="key-fields"></div>
+          <button id="save-keys" type="submit" class="primary">Save API keys</button>
+        </form>
+        <p id="keys-status" role="status"></p>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "ES2022",
+    "moduleResolution": "Bundler",
+    "moduleDetection": "legacy",
+    "types": []
+  },
+  "include": [
+    "src/renderer.ts",
+    "src/notepad-window.ts"
+  ]
+}
