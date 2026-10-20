@@ -1,5 +1,4 @@
 import { initializeM365Tabs } from './m365-tabs.js';
-import { initializeNotepad } from './notepad-ui.js';
 import { initializeDataTools } from './data-tools.js';
 import { initializeBrowserHistory } from './browser-history-ui.js';
 import { initializeKqlLibrary } from './kql-library.js';
@@ -7,7 +6,7 @@ import { initializeAuditLogs } from './audit-logs.js';
 import { initializeUalLogs } from './ual-logs.js';
 import { tableValue } from './table-value.js';
 import { initializeIdentityTabs } from './identity-tabs.js';
-import type { AuthMode, BecApi, Collection, ConditionalAccessReport, Reply, SessionState, SignIn, UiAuditEvent, WorkspacePage, Provider, OsintReport } from './contracts';
+import type { AuthMode, ExchangeAccess, BecApi, Collection, ConditionalAccessReport, Reply, SessionState, SignIn, UiAuditEvent, WorkspacePage, Provider, OsintReport } from './contracts';
 declare global { interface Window { bec: BecApi } }
 
 const el = <T extends HTMLElement = HTMLElement>(id: string): T => {
@@ -85,9 +84,11 @@ function connectionIndicators(): void {
     el(`${service}-connection`).textContent = `${service === 'graph' ? 'Graph' : 'Exchange'}: ${connected ? 'connected' : phase === 'failed' ? 'failed' : phase === 'connecting' ? 'connecting' : 'disconnected'}`;
     el(`${service}-connection`).dataset.tone = tone;
     el(`${service}-card`).dataset.tone = tone;
-    el(`${service}-card-status`).textContent = label;
+    const account = service === 'graph' ? state.graphAccount ?? state.account : state.exchangeAccount;
+    el(`${service}-card-status`).textContent = connected && account ? `${label} · ${account}` : label;
+    el(`${service}-card`).title = connected ? `Target tenant: ${state.tenant}${service === 'exchange' && state.exchangeAuthTenant ? ` | Sign-in tenant: ${state.exchangeAuthTenant}` : ''}` : '';
   }
-  el('session-status').dataset.tone = state.graph ? 'success' : connectionPhase.graph === 'failed' ? 'failure' : 'neutral';
+  el('session-status').dataset.tone = state.graph || state.exchange ? 'success' : connectionPhase.graph === 'failed' || connectionPhase.exchange === 'failed' ? 'failure' : 'neutral';
 }
 function controls(): void {
   identityTabs.controls(busy, state.graph);
@@ -96,17 +97,18 @@ function controls(): void {
   m365Tabs.controls(busy, state);
   selectionControls();
   el<HTMLSelectElement>('auth-mode').disabled = busy;
+  el<HTMLSelectElement>('exchange-access').disabled = busy || state.exchange;
   for (const id of ['install', 'connect', 'exchange', 'collect']) el<HTMLButtonElement>(id).disabled = busy;
   el<HTMLButtonElement>('connect').disabled = busy || state.graph;
-  input('tenant').disabled = busy || state.graph;
-  el<HTMLButtonElement>('exchange').disabled = busy || !state.graph || state.exchange;
+  input('tenant').disabled = busy || state.graph || state.exchange;
+  el<HTMLButtonElement>('exchange').disabled = busy || state.exchange;
   el<HTMLButtonElement>('collect').disabled = busy || !state.graph;
   for (const id of ['export-csv', 'export-json']) el<HTMLButtonElement>(id).disabled = busy || !collection;
-  el('session-status').textContent = state.graph
-    ? `Graph: ${state.account} · tenant ${state.tenant} | Exchange: ${state.exchange ? 'connected' : 'disconnected'}`
-    : 'Disconnected. Connect Graph to begin investigation.';
+  el('session-status').textContent = state.graph || state.exchange
+    ? `Tenant ${state.tenant} | Graph: ${state.graph ? state.graphAccount ?? state.account : 'disconnected'} | Exchange: ${state.exchange ? state.exchangeAccount || 'connected' : 'disconnected'}`
+    : 'Disconnected. Connect Graph or Exchange for the tools you need.';
   connectionIndicators();
-  el('connection-summary').title = state.graph ? `${state.account} · tenant ${state.tenant}` : 'Manage connections in the Session tab';
+  el('connection-summary').title = state.graph || state.exchange ? el('session-status').textContent! : 'Manage connections in the Session tab';
 }
 async function operation(work: (epoch: number) => Promise<void>): Promise<void> {
   if (busy) return;
@@ -140,7 +142,6 @@ async function navigate(page: WorkspacePage): Promise<void> {
     session: { title: 'Session', description: 'Manage Graph and Exchange connections for BEC compromise investigations.' },
     'sign-ins': { title: 'Sign in Exports', description: 'Query and export Entra sign-in logs.' },
     toolkit: { title: 'OSINT Toolkit', description: 'IP reputation and file intelligence for standard BAU investigations.' },
-    notepad: { title: 'Notepad', description: 'Tabbed notes. Save locally only when needed.' },
     'data-tools': { title: 'Data Tools', description: 'Defang, refang, Base64 and JSON.' },
     'browser-history': { title: 'Browser History', description: 'Chrome, Edge and Firefox history databases.' },
     'kql-library': { title: 'KQL Library', description: 'Saved query templates and parameters.' },
@@ -159,14 +160,13 @@ async function navigate(page: WorkspacePage): Promise<void> {
   const { title, description } = pages[page];
   el('breadcrumb').textContent = title; el('page-title').textContent = title;
   el('page-description').textContent = description;
-  el('notepad-module').hidden = page !== 'notepad';
   el('data-module').hidden = page !== 'data-tools';
   el('history-module').hidden = page !== 'browser-history';
   el('kql-module').hidden = page !== 'kql-library';
   el('toolkit-module').hidden = page !== 'toolkit';
   el('settings-module').hidden = page !== 'settings';
-  document.querySelector<HTMLElement>('.shared-session')!.hidden = page === 'toolkit' || page === 'kql-library' || page === 'browser-history' || page === 'data-tools' || page === 'notepad' || page === 'settings';
-  el('operation-status').hidden = page === 'toolkit' || page === 'kql-library' || page === 'browser-history' || page === 'data-tools' || page === 'notepad' || page === 'settings';
+  document.querySelector<HTMLElement>('.shared-session')!.hidden = page === 'toolkit' || page === 'kql-library' || page === 'browser-history' || page === 'data-tools' || page === 'settings';
+  el('operation-status').hidden = page === 'toolkit' || page === 'kql-library' || page === 'browser-history' || page === 'data-tools' || page === 'settings';
   if (page === 'settings') void refreshKeys();
   el('session-module').hidden = page !== 'session';
   el('uals-module').hidden = page !== 'uals';
@@ -205,7 +205,7 @@ window.bec.onLog(text => {
 el('install').addEventListener('click', () => void operation(async epoch => {
   message('Installing Graph Authentication and ExchangeOnlineManagement for this Windows user…');
   unwrap(await window.bec.install()); if (epoch !== generation) return;
-  message('Modules installed. Enter the tenant ID, then connect Graph.');
+  message('Modules installed. Enter the tenant ID, then connect Graph or Exchange.');
 }));
 el('connect').addEventListener('click', () => void operation(async epoch => {
   connectionPhase.graph = 'connecting'; controls();
@@ -221,7 +221,8 @@ el('exchange').addEventListener('click', () => void operation(async epoch => {
   connectionPhase.exchange = 'connecting'; controls();
   try {
     await prepareAuth('Exchange');
-    const result = unwrap(await window.bec.exchange(authMode())); if (epoch !== generation) return;
+    const access = el<HTMLSelectElement>('exchange-access').value as ExchangeAccess;
+    const result = unwrap(await window.bec.exchange(authMode(), input('tenant').value.trim(), access)); if (epoch !== generation) return;
     state = result; connectionPhase.exchange = 'idle';
     message('Exchange Online connected successfully. The connection is available across this investigation.', 'success');
   } catch (error) { if (epoch === generation) connectionPhase.exchange = 'failed'; throw error; }
@@ -605,5 +606,3 @@ initializeKqlLibrary();
 initializeBrowserHistory(window.bec);
 
 initializeDataTools();
-
-initializeNotepad(el('notepad-surface'),window.notes);

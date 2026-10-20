@@ -253,30 +253,6 @@ button.kql-query.active { background: var(--selection-background); border-color:
 .m365-module tr[data-tone] td:first-child { border-left: 3px solid var(--status-border); }
 .m365-module textarea { width: 100%; background: #101010; color: #ddd; border: 1px solid #444; border-radius: 5px; padding: 10px; font: inherit; }
 
-.notes-toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 24px; }
-.notes-toolbar select { width: auto; min-width: 180px; max-width: 320px; }
-.notes-toolbar > button:last-child { margin-left: auto; }
-.note-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 8px 0; }
-.note-tab { display: flex; flex: 0 0 auto; border: 1px solid var(--selection-border); border-radius: 6px; background: var(--field-background); max-width: 250px; }
-.note-tab.active { background: var(--selection-background); border-color: var(--selection-border); }
-.note-tab button { background: transparent; border: none; border-radius: 5px; }
-.note-tab-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.note-tab.active .note-tab-name { color: var(--selection-text); }
-.note-tab-close { flex-shrink: 0; }
-.note-editor { padding: 16px; background: var(--selection-background); border: 1px solid var(--selection-border); border-radius: 7px; }
-.note-heading { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
-.note-heading label { min-width: 0; }
-#note-text { display: block; width: 100%; min-height: 340px; resize: vertical; background: var(--field-background); color: var(--selection-text); border: 1px solid var(--selection-border); border-radius: 5px; padding: 14px; font: 13px/1.7 Consolas, monospace; }
-#note-text:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
-#note-text:read-only { color: #b4abc8; }
-.notes-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; }
-.notes-actions button.primary { background: var(--selection-background); border-color: var(--selection-border); color: white; }
-.note-confirm { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 12px; font-size: 12px; color: #f1d077; }
-.notepad-window { display: block; }
-.notepad-window main { padding: 24px; }
-.notepad-window h1 { font-size: 23px; }
-.notepad-window #note-text { min-height: 260px; height: 44vh; }
-
 .brand { gap: 8px; padding: 0 4px; }
 .brand img { display: block; width: 40px; height: 40px; object-fit: contain; flex-shrink: 0; }
 .brand span { white-space: nowrap; }

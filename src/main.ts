@@ -1,6 +1,5 @@
 import { buildM365Collection, filterM365, m365Csv, m365Kinds, validateDetonation, validateM365Filters, validateM365Query } from './m365-evidence';
 import type { M365Collection, M365Kind, M365Result } from './contracts';
-import { registerNotepad } from './notepad-main';
 import { BrowserHistory } from './browser-history';
 import { validateHistoryQuery } from './browser-history-db';
 import type { HistoryBrowser } from './contracts';
@@ -143,7 +142,7 @@ function registerHandlers(): void {
         return null;
       }
       case 'navigate':
-        if (!['session', 'sign-ins', 'audit-logs', ...identityKinds, ...m365Kinds, 'uals', 'toolkit', 'kql-library', 'browser-history', 'data-tools', 'notepad', 'settings'].includes(String(item.page))) throw new Error('Invalid page.');
+        if (!['session', 'sign-ins', 'audit-logs', ...identityKinds, ...m365Kinds, 'uals', 'toolkit', 'kql-library', 'browser-history', 'data-tools', 'settings'].includes(String(item.page))) throw new Error('Invalid page.');
         break;
       case 'nav_group_toggle':
         if (!['entra', 'm365'].includes(String(item.group)) || typeof item.open !== 'boolean') throw new Error('Invalid navigation group.');
@@ -217,6 +216,7 @@ function registerHandlers(): void {
     if (typeof tenant !== 'string' || !/^[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}$/i.test(tenant)) throw new Error('Enter the tenant ID as a GUID from Microsoft Entra.');
     if (mode !== 'browser' && mode !== 'device') throw new Error('Choose browser or device-code sign-in.');
     if (state.graph) throw new Error('Start a fresh investigation before changing connections.');
+    if (state.exchange && tenant.toLowerCase() !== state.tenant.toLowerCase()) throw new Error('Use the connected investigation tenant, or start a fresh investigation to change tenant.');
     const current = epoch;
     openAuthBrowser = mode === 'browser';
     let result: SessionState;
@@ -226,13 +226,20 @@ function registerHandlers(): void {
     investigation.write('GRAPH_CONNECTED', result);
     state = result; return state;
   }));
-  handle('exchange', mode => exclusive(async () => {
+  handle('exchange', value => exclusive(async () => {
+    const request = value as { mode?: unknown; tenant?: unknown; access?: unknown } | null;
+    const mode = typeof value === 'string' ? value : request?.mode;
+    const tenant = request?.tenant ?? state.tenant;
+    const access = request?.access ?? 'direct';
+    if (access !== 'direct' && access !== 'delegated') throw new Error('Choose direct or guest / delegated Exchange access.');
     if (mode !== 'browser' && mode !== 'device') throw new Error('Choose browser or device-code sign-in.');
-    if (!state.graph) throw new Error('Connect Graph first.');
+    if (typeof tenant !== 'string' || !/^[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}$/i.test(tenant)) throw new Error('Enter the tenant ID as a GUID from Microsoft Entra.');
+    if (state.exchange) throw new Error('Exchange is already connected.');
+    if (state.graph && tenant.toLowerCase() !== state.tenant.toLowerCase()) throw new Error('Use the connected investigation tenant, or start a fresh investigation to change tenant.');
     const current = epoch;
     openAuthBrowser = mode === 'browser';
     let result: SessionState;
-    try { result = await session.run('exchange', { mode }) as SessionState; }
+    try { result = await session.run('exchange', { mode, tenant, access }) as SessionState; }
     finally { if (current === epoch) openAuthBrowser = false; }
     if (epoch !== current) throw new Error('Investigation reset.');
     investigation.write('EXCHANGE_CONNECTED', result);
@@ -324,7 +331,7 @@ function registerHandlers(): void {
     ualEvidence = null;
     if (!state.exchange) throw new Error('Connect Exchange in Session first.');
     const query = validateUalQuery(value), tenant = state.tenant, current = epoch;
-    investigation.write('UAL_COLLECTION_BEGIN', { query, tenant, account: state.account });
+    investigation.write('UAL_COLLECTION_BEGIN', { query, tenant, account: state.exchangeAccount ?? state.account });
     const result = await session.run('collect-ual', query) as { rows: Record<string, any>[] };
     if (current !== epoch) throw new Error('Investigation reset.');
     if (!result || !Array.isArray(result.rows)) throw new Error('Invalid UAL collection response.');
@@ -479,6 +486,7 @@ function createWindow(): void {
   const window = new BrowserWindow({
     width: 1440, height: 960, minWidth: 900, minHeight: 650,
     title: 'BEC Bot', backgroundColor: '#101010', autoHideMenuBar: true,
+    icon: path.join(__dirname, '../ui/assets/aspire.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), nodeIntegration: false, contextIsolation: true, sandbox: true },
   });
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
@@ -490,7 +498,6 @@ void app.whenReady().then(() => {
   try { investigation = new InvestigationLog(logDirectory); }
   catch (error) { dialog.showErrorBox('Cannot start investigation logging', String(error)); app.exit(1); return; }
   registerHandlers();
-  registerNotepad();
   createWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

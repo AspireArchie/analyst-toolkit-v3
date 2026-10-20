@@ -12,7 +12,7 @@
   <aside class="sidebar">
     <div class="brand"><img src="assets/aspire.png" alt="Aspire" /><span>Analyst Toolkit</span></div>
     <div class="nav-label">Toolkit · BAU investigations</div>
-    <nav aria-label="BAU tools"><button class="nav-item" data-page="toolkit"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="7" /><path d="m15 15 6 6M3 10h14M10 3c-4 4-4 10 0 14 4-4 4-10 0-14" /></svg><span>OSINT Toolkit</span><span class="nav-arrow" aria-hidden="true">↗</span></button><button class="nav-item" data-page="kql-library"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v18H5a2 2 0 0 1 0-4h14M5 3a2 2 0 0 0-2 2v14m7-12-2 3 2 3m4-6 2 3-2 3" /></svg><span>KQL Library</span><span class="nav-arrow" aria-hidden="true">↗</span></button><button class="nav-item" data-page="browser-history"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l4 2" /></svg><span>Browser History</span><span class="nav-arrow" aria-hidden="true">↗</span></button><button class="nav-item" data-page="data-tools"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5-6 7 6 7m8-14 6 7-6 7M14 3l-4 18" /></svg><span>Data Tools</span><span class="nav-arrow" aria-hidden="true">↗</span></button><button class="nav-item" data-page="notepad"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v18H5zM8 8h8M8 12h8M8 16h5" /></svg><span>Notepad</span><span class="nav-arrow" aria-hidden="true">↗</span></button></nav>
+    <nav aria-label="BAU tools"><button class="nav-item" data-page="toolkit"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="7" /><path d="m15 15 6 6M3 10h14M10 3c-4 4-4 10 0 14 4-4 4-10 0-14" /></svg><span>OSINT Toolkit</span><span class="nav-arrow" aria-hidden="true">↗</span></button><button class="nav-item" data-page="kql-library"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v18H5a2 2 0 0 1 0-4h14M5 3a2 2 0 0 0-2 2v14m7-12-2 3 2 3m4-6 2 3-2 3" /></svg><span>KQL Library</span><span class="nav-arrow" aria-hidden="true">↗</span></button><button class="nav-item" data-page="browser-history"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l4 2" /></svg><span>Browser History</span><span class="nav-arrow" aria-hidden="true">↗</span></button><button class="nav-item" data-page="data-tools"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5-6 7 6 7m8-14 6 7-6 7M14 3l-4 18" /></svg><span>Data Tools</span><span class="nav-arrow" aria-hidden="true">↗</span></button></nav>
     <div class="nav-label">BEC Bot · Compromises</div>
     <nav aria-label="Investigation tools">
       <button class="nav-item active" data-page="session" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3v5m8-5v5M5 8h14v4a7 7 0 0 1-14 0zm7 11v3" /></svg><span>Session</span><span class="nav-arrow" aria-hidden="true">↗</span></button>
@@ -52,8 +52,11 @@
       <div class="section-label">Connections</div>
       <div class="connection-cards"><div id="graph-card" class="connection-card" data-tone="neutral"><strong>Microsoft Graph</strong><span id="graph-card-status">Disconnected</span></div><div id="exchange-card" class="connection-card" data-tone="neutral"><strong>Exchange Online</strong><span id="exchange-card-status">Disconnected</span></div></div>
       <div class="control-row"><label>Authentication method<select id="auth-mode"><option value="browser">Open browser automatically + enter code</option><option value="device">Device code (open browser manually)</option></select></label></div>
+      <div class="control-row"><label>Exchange account access<select id="exchange-access"><option value="delegated">Guest / delegated access (access packages or GDAP)</option><option value="direct">Account in the target tenant</option></select></label></div>
       <div class="control-row"><label>Tenant ID (GUID)<input id="tenant" placeholder="00000000-0000-0000-0000-000000000000" autocomplete="off" /></label><button id="install">Install modules</button><button id="connect" class="primary">Connect Graph</button><button id="exchange">Connect Exchange</button><button id="reset">New / disconnect</button></div>
-      <p id="session-status" role="status">Disconnected. Connect Graph to begin investigation.</p>
+      <p id="session-status" role="status">Disconnected. Connect Graph or Exchange for the tools you need.</p>
+      <p class="help">Graph and Exchange connect independently. Exchange-only investigations do not require Graph. Connect either service first; both must use the selected tenant.</p>
+      <p class="help">Enter the customer tenant ID. With guest / delegated access, sign in using your normal work account; Exchange targets the customer tenant. Graph also targets the entered tenant ID.</p>
       <p id="investigation-log" class="help">Starting investigation log…</p>
       <details><summary>Session output / sign-in instructions</summary><pre id="session-output" aria-live="polite">PowerShell 7 required. Device sign-in instructions will appear here.</pre></details>
     </section>
@@ -120,7 +123,6 @@
         <p id="osint-status" role="status">Configure provider keys in Settings.</p>
         <div id="osint-results"></div>
       </section>
-      <section id="notepad-module" hidden><div id="notepad-surface"></div></section>
       <section id="data-module" hidden>
         <div class="data-toolbar">
           <label>Operation<select id="data-operation"><option value="defang">Defang IPs / URLs</option><option value="refang">Refang IPs / URLs</option><option value="base64-encode">Base64 encode</option><option value="base64-decode">Base64 decode</option><option value="json">JSON beautify</option></select></label>

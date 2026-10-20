@@ -7,9 +7,13 @@ $script:graph = $false
 $script:exchange = $false
 $script:tenant = ''
 $script:account = ''
+$script:graphAccount = ''
+$script:exchangeAccount = ''
+$script:exchangeAccess = 'direct'
+$script:exchangeAuthTenant = ''
 
 function Get-State {
-    @{ graph = $script:graph; exchange = $script:exchange; tenant = $script:tenant; account = $script:account }
+    @{ graph = $script:graph; exchange = $script:exchange; tenant = $script:tenant; account = $script:account; graphAccount = $script:graphAccount; exchangeAccount = $script:exchangeAccount; exchangeAccess = $script:exchangeAccess; exchangeAuthTenant = $script:exchangeAuthTenant }
 }
 
 function Write-QueryAudit([string]$Command, $Parameters = @{}) {
@@ -103,6 +107,7 @@ while ($null -ne ($line = [Console]::ReadLine())) {
             }
             'connect' {
                 if ($script:graph) { throw 'Reset the current investigation before changing tenant.' }
+                if ($script:exchange -and $request.tenant -ne $script:tenant) { throw 'Graph must use the connected investigation tenant. Reset to change tenant.' }
                 Require-Module 'Microsoft.Graph.Authentication'
                 $parameters = @{ TenantId = $request.tenant; Scopes = @('AuditLog.Read.All', 'Policy.Read.ConditionalAccess', 'User.ReadBasic.All', 'Directory.Read.All', 'IdentityRiskEvent.Read.All', 'IdentityRiskyUser.Read.All', 'ThreatHunting.Read.All'); ContextScope = 'Process'; NoWelcome = $true }
                 Write-Host 'Requesting a Microsoft device code. Enter the code shown below on the Microsoft sign-in page.'
@@ -116,27 +121,49 @@ while ($null -ne ($line = [Console]::ReadLine())) {
                 if ($context.TenantId -ne $request.tenant) {
                     Write-QueryAudit 'Disconnect-MgGraph'
                     Disconnect-MgGraph | Out-Null
-                    throw 'Authenticated tenant differs from the requested tenant.'
+                    throw "Graph returned tenant '$($context.TenantId)' instead of requested tenant '$($request.tenant)'. The connection was closed. Confirm the access package is active for the customer tenant and that your signed-in account has the required Graph access there."
                 }
                 $script:graph = $true
                 $script:tenant = $context.TenantId
                 $script:account = $context.Account
+                $script:graphAccount = $context.Account
                 $data = Get-State
             }
             'exchange' {
-                if (-not $script:graph) { throw 'Connect Microsoft Graph to select an investigation tenant first.' }
+                if ($script:exchange) { throw 'Exchange is already connected.' }
+                $targetTenant = if ($request.tenant) { [string]$request.tenant } else { $script:tenant }
+                if ($targetTenant -notmatch '^[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}$') { throw 'Enter the investigation tenant ID as a GUID.' }
+                if ($script:graph -and $targetTenant -ne $script:tenant) { throw 'Exchange must use the connected investigation tenant. Reset to change tenant.' }
+                $access = if ($request.access) { [string]$request.access } else { 'direct' }
+                if ($access -notin @('direct','delegated')) { throw 'Choose direct or guest / delegated Exchange access.' }
                 Require-Module 'ExchangeOnlineManagement'
-                Write-Host 'Requesting an Exchange device code. Enter the code shown below on the Microsoft sign-in page.'
-                Write-QueryAudit 'Connect-ExchangeOnline' @{ Device = $true; ShowBanner = $false }
-                Connect-ExchangeOnline -Device -ShowBanner:$false 6>&1 | Write-AuthOutput
+                $parameters = @{ Device = $true; ShowBanner = $false }
+                if ($access -eq 'delegated') { $parameters.DelegatedOrganization = $targetTenant }
+                Write-Host "Requesting an Exchange device code for target tenant $targetTenant ($access access). Enter the code shown below on the Microsoft sign-in page."
+                Write-QueryAudit 'Connect-ExchangeOnline' $parameters
+                Connect-ExchangeOnline @parameters 6>&1 | Write-AuthOutput
                 Write-QueryAudit 'Get-ConnectionInformation'
                 $connections = @(Get-ConnectionInformation | Where-Object { $_.State -eq 'Connected' })
-                if ($connections.Count -eq 0 -or @($connections | Where-Object { $_.TenantID -ne $script:tenant }).Count -gt 0) {
+                # Delegated connections can authenticate in the analyst's home
+                # tenant. Validate the mapped customer organization, not that
+                # authentication tenant. The app always supplies a GUID target.
+                $wrongTarget = @($connections | Where-Object {
+                    if ($access -eq 'delegated') { [string]$_.DelegatedOrganization -ne $targetTenant }
+                    else { $_.TenantID -ne $targetTenant -or ($_.DelegatedOrganization -and $_.DelegatedOrganization -ne $targetTenant) }
+                })
+                if ($connections.Count -eq 0 -or $wrongTarget.Count -gt 0) {
+                    $observed = ($connections | ForEach-Object { "sign-in tenant=$($_.TenantID), delegated organization=$($_.DelegatedOrganization)" }) -join '; '
                     Write-QueryAudit 'Disconnect-ExchangeOnline' @{ Confirm = $false }
                     Disconnect-ExchangeOnline -Confirm:$false | Out-Null
-                    throw 'Exchange tenant did not match the Graph investigation tenant. Connection closed.'
+                    throw "Exchange target verification failed for requested tenant '$targetTenant' ($access access). Returned: $observed. Connection closed. For access-package or guest accounts, select Guest / delegated access and confirm access is active in the customer tenant."
                 }
                 $script:exchange = $true
+                $script:tenant = $targetTenant
+                $script:exchangeAccount = [string]$connections[0].UserPrincipalName
+                $script:exchangeAccess = $access
+                $script:exchangeAuthTenant = [string]$connections[0].TenantID
+                Write-Host "Exchange target verified: $targetTenant. Signed in as $($script:exchangeAccount) (sign-in tenant $($script:exchangeAuthTenant))."
+                if (-not $script:graph) { $script:account = $script:exchangeAccount }
                 $data = Get-State
             }
             'collect-identity' {

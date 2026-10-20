@@ -94,13 +94,13 @@ Set-Location "$env:USERPROFILE\source\analyst-toolkit-v3"
 npm.cmd start
 ```
 
-The batch file retains its original BEC Bot filename. There is no separate packaged installer in this repository; launch it using the supplied script or npm command. Keep the launch terminal open while working. Close the application and any Notepad pop-out windows when finished.
+The batch file retains its original BEC Bot filename. There is no separate packaged installer in this repository; launch it using the supplied script or npm command. Keep the launch terminal open while working. Close the application when finished.
 
 ## 5. Initial configuration
 
 ### Toolkit use
 
-**Data Tools, KQL Library, Notepad and Browser History** do not need a Microsoft connection. Browser History imports a closed-browser copy of Chrome/Edge's `History` or Firefox's `places.sqlite`; keep any matching `-wal` file alongside the copied database.
+**Data Tools, KQL Library and Browser History** do not need a Microsoft connection. Browser History imports a closed-browser copy of Chrome/Edge's `History` or Firefox's `places.sqlite`; keep any matching `-wal` file alongside the copied database.
 
 For **OSINT Toolkit**, open **Settings**, enter the API keys you have for VirusTotal, AbuseIPDB and IPData, then choose **Save API keys**. Each provider requires its own key. A missing key leaves that provider unavailable while other configured providers can still run. Keys are stored locally, encrypted for the Windows account.
 
@@ -110,16 +110,16 @@ Complete this section only if you will collect Microsoft investigation evidence:
 
 1. Confirm `pwsh --version` succeeds, then open **Session**.
 2. Select **Install modules** and wait for successful completion. This installs `Microsoft.Graph.Authentication` and `ExchangeOnlineManagement` for the current user.
-3. Enter the affected organisation's Microsoft Entra **tenant ID** in GUID format.
-4. Select **Connect Graph**. Follow the device sign-in instructions shown in **Session output**, completing the browser sign-in using an authorised analyst account.
-5. For Exchange-dependent workflows, including UAL collection, select **Connect Exchange** and complete its separate sign-in for the same tenant.
+3. Enter the affected customer organisation's Microsoft Entra **tenant ID** in GUID format. For access-package or guest accounts, keep **Exchange account access → Guest / delegated access** selected and sign in with your normal work account. Select **Account in the target tenant** only for native customer accounts.
+4. Select **Connect Graph** for Entra tools or **Connect Exchange** for Exchange-only workflows. Either can connect first. Follow the device sign-in instructions shown in **Session output**, completing the browser sign-in using an authorised analyst account.
+5. Connect the other service only if required, using the same investigation tenant. UALs, inbox rules, traces, forwarding and quarantine metadata can use Exchange alone. Entra tools and Defender advanced hunting require Graph. A failed Graph sign-in does not disconnect Exchange.
 6. Confirm the relevant connection indicator is green before collecting evidence.
 
 Tenant administrators must provide the required roles, consent and licensing for the selected investigation modules. Installing the application or modules does not grant tenant permissions. The repository's [README](../README.md) documents the requested Graph scopes and module coverage.
 
 ## 6. Pull updates
 
-Before updating, export any investigation evidence you need and explicitly save any Notepad changes you want to retain. Close the application, including Notepad pop-outs.
+Before updating, export any investigation evidence you need and close the application.
 
 Open PowerShell:
 
@@ -148,8 +148,6 @@ If any command fails, stop and resolve that error before running the next comman
 | Exported evidence | The destination chosen in the app's save dialog. |
 | Saved API keys | `api-keys.enc` in the app's user-data directory; encrypted for the Windows account. |
 | Saved KQL templates | Local browser storage within the app's user-data directory. |
-| Saved Notepad snapshots | `notepad.json` in the app's user-data directory. Only an explicit **Save locally** action persists a note. |
-| Unsaved notes and later edits | Memory only; discarded when the application exits. |
 
 For this checkout, the default Windows user-data directory is `%APPDATA%\bec-bot`. Keep that directory if you want to retain local settings and saved information. A Git clone on another device does not transfer these items, API keys, logs or exported evidence.
 

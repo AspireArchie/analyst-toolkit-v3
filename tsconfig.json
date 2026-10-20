@@ -16,7 +16,6 @@
   "include": [
     "src/main.ts",
     "src/preload.ts",
-    "src/browser-history-worker.ts",
-    "src/notepad-preload.ts"
+    "src/browser-history-worker.ts"
   ]
 }

@@ -7,7 +7,6 @@
     "types": []
   },
   "include": [
-    "src/renderer.ts",
-    "src/notepad-window.ts"
+    "src/renderer.ts"
   ]
 }

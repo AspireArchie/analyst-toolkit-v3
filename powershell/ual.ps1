@@ -46,7 +46,10 @@ function Read-UalRange([datetime]$Start, [datetime]$End, $Request, $Stats, [int]
 function Read-UalCollection($Request) {
     if (-not $script:exchange) { throw 'Connect Exchange in Session before collecting unified audit logs.' }
     Write-QueryAudit 'Get-Command' @{ Name = 'Search-UnifiedAuditLog' }
-    $command = Get-Command Search-UnifiedAuditLog -ErrorAction Stop
+    $command = Get-Command Search-UnifiedAuditLog -ErrorAction SilentlyContinue
+    if (-not $command) {
+        throw "Audit history unavailable: Search-UnifiedAuditLog is not exposed by the Exchange session for customer tenant '$($script:tenant)' and account '$($script:exchangeAccount)'. Ask the tenant administrator to verify the View-Only Audit Logs or Audit Logs role for this account, including the active access-package/delegated assignment and Exchange audit-cmdlet permissions. After access is activated or changed, use New / disconnect and reconnect Exchange. Current mailbox rules can still be collected; audit history has not been searched."
+    }
     $stats = @{ pages = 0; windows = 0; splits = 0; serviceRecordLimit = 50000; highCompleteness = $command.Parameters.ContainsKey('HighCompleteness') }
     $start = [datetime]::Parse($Request.start).ToUniversalTime()
     $end = [datetime]::Parse($Request.end).ToUniversalTime()

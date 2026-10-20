@@ -1,4 +1,4 @@
-export interface SessionState { graph: boolean; exchange: boolean; tenant: string; account: string }
+export interface SessionState { graph: boolean; exchange: boolean; tenant: string; account: string; graphAccount?: string; exchangeAccount?: string; exchangeAccess?: ExchangeAccess; exchangeAuthTenant?: string }
 export interface SignInQuery { user: string; start: string; end: string }
 export interface SignIn {
   id: string; createdDateTime: string; userPrincipalName: string; appDisplayName: string;
@@ -37,13 +37,14 @@ export interface UalCollection { query: UalQuery; tenant: string; collectedAt: s
 export interface UalView { records: UalRecord[]; total: number; matched: number; unknownIPs: number; page: number }
 export type Reply<T> = { ok: true; data: T } | { ok: false; error: string };
 export type AuthMode = 'browser' | 'device';
+export type ExchangeAccess = 'direct' | 'delegated';
 export type IdentityKind = 'risk-detections' | 'devices' | 'app-consents';
 export interface IdentityQuery extends SignInQuery { allRetained?: boolean }
 export interface IdentityRow { key: string; source: 'risk' | 'risk-user' | 'risk-history' | 'risky-signin' | 'device' | 'grant' | 'audit'; values: Record<string, string>; flags: string[]; tone: 'neutral' | 'success' | 'warning' | 'failure'; raw: Record<string, any> }
 export interface RiskSource { source: string; ok: boolean; count?: number; error?: string; checkedAt: string }
 export interface IdentityResult { userId: string; userPrincipalName?: string; rows: any[]; relatedAudits?: DirectoryAudit[]; riskyUser?: Record<string, any> | null; riskHistory?: Record<string, any>[]; riskySignIns?: SignIn[]; riskSources?: RiskSource[] }
 export interface IdentityCollection { kind: IdentityKind; query: IdentityQuery; userId: string; tenant: string; collectedAt: string; columns: string[]; rows: IdentityRow[]; coverage: string; riskSources?: RiskSource[] }
-export type WorkspacePage = M365Kind | 'session' | 'sign-ins' | 'audit-logs' | IdentityKind | 'uals' | 'toolkit' | 'kql-library' | 'browser-history' | 'data-tools' | 'notepad' | 'settings';
+export type WorkspacePage = M365Kind | 'session' | 'sign-ins' | 'audit-logs' | IdentityKind | 'uals' | 'toolkit' | 'kql-library' | 'browser-history' | 'data-tools' | 'settings';
 export type UiAuditEvent =
   | { action: 'table_cell_toggle'; page: WorkspacePage; id: string; field: string; open: boolean }
   | { action: 'navigate'; page: WorkspacePage }
@@ -80,7 +81,7 @@ export interface BecApi {
   install(): Promise<Reply<null>>;
   connect(tenant: string, mode: AuthMode): Promise<Reply<SessionState>>;
   conditionalAccess(ids: string[]): Promise<Reply<ConditionalAccessReport>>;
-  exchange(mode: AuthMode): Promise<Reply<SessionState>>;
+  exchange(mode: AuthMode, tenant?: string, access?: ExchangeAccess): Promise<Reply<SessionState>>;
   reset(): Promise<Reply<SessionState>>;
   collect(query: SignInQuery): Promise<Reply<Collection>>;
   collectAudits(query: SignInQuery): Promise<Reply<AuditCollection>>;
@@ -112,21 +113,6 @@ export interface HistoryVisit {
   type: string; rawType: string; urlVisits: number | null; durationSeconds: number | null; referrer: string;
 }
 export interface HistoryResults { sourceId: string; total: number; pages: number; first: string | null; last: string | null; page: number; rows: HistoryVisit[] }
-
-export interface NoteDocument { id: string; title: string; text: string; revision: number; status: 'unsaved' | 'saved' | 'modified' }
-export interface NoteState { notes: NoteDocument[]; saved: { id: string; title: string }[]; detached: boolean; focusId?: string; storageAvailable: boolean; storageError?: string }
-export interface NoteEdit { id: string; title: string; text: string; revision: number }
-export interface NoteApi {
-  state(): Promise<Reply<NoteState>>;
-  add(): Promise<Reply<NoteState>>;
-  update(edit: NoteEdit): Promise<Reply<NoteState>>;
-  save(id: string, revision: number): Promise<Reply<NoteState>>;
-  close(id: string, revision: number, discard: boolean): Promise<Reply<NoteState>>;
-  openSaved(id: string): Promise<Reply<NoteState>>;
-  forgetSaved(id: string): Promise<Reply<NoteState>>;
-  popOut(id: string): Promise<Reply<NoteState>>;
-  onChange(callback: (state: NoteState) => void): () => void;
-}
 
 export type M365Kind = 'inbox-rules' | 'trace-outbound' | 'trace-inbound' | 'defender-review' | 'forwarding';
 export interface M365Query extends SignInQuery { party: string }

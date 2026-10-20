@@ -26,12 +26,20 @@ Connection cards and header badges show confirmed connections in green, failed c
 
 1. Install PowerShell 7 (`pwsh.exe`) and ensure it is on PATH. Windows PowerShell 5.1 is not supported for this workflow.
 2. Start BEC Bot and choose **Install modules** once. This installs `Microsoft.Graph.Authentication` and `ExchangeOnlineManagement` from PSGallery for the current Windows user; no administrator rights are normally needed. You may instead install these yourself in PowerShell 7 using `Install-Module <name> -Scope CurrentUser`.
-3. Enter the target Microsoft Entra **tenant ID** (GUID) and choose **Connect Graph**. The default sign-in method opens Microsoft's device-login page automatically when the code arrives. **Session output** expands and shows the code to enter in the browser. Use an account with access to that tenant's logs. For another device, select **Device code (open browser manually)** instead. Neither mode uses an embedded login popup.
-4. Optionally choose **Connect Exchange** and complete its separate device sign-in. The app rejects Exchange connections whose tenant differs from Graph. Exchange is shared across modules but is not required to read Entra sign-ins.
+3. Enter the target Microsoft Entra **tenant ID** (GUID). Choose **Connect Graph** for Entra investigations or **Connect Exchange** for Exchange-only investigations; either service can connect first. The default sign-in method opens Microsoft's device-login page automatically when the code arrives. **Session output** expands and shows the code to enter in the browser. Use an account with access to that tenant's logs. For another device, select **Device code (open browser manually)** instead. Neither mode uses an embedded login popup.
+4. Connect the other service only when needed and complete its separate device sign-in. Each service has its own connection status and account. Both must match the selected investigation tenant. Graph authentication failures leave an existing Exchange connection usable. Exchange supports UALs, inbox rules, message traces, forwarding and quarantine metadata without Graph; Entra tools and Defender advanced hunting require Graph.
 5. In **Sign in Exports**, enter the compromised user's full UPN and select 24h, 48h, 72h, one week, or a custom start/end. Custom dates use the device's local timezone; requests and results use UTC, with an exclusive end time.
 6. Choose **Collect sign-ins**. The app queries interactive and non-interactive user sign-ins separately, follows every result page, deduplicates event IDs, then presents the completed result set. A failed query does not expose a partial collection as complete.
 7. Search or filter event types, page through results, and choose **View** to inspect a complete raw record. **Export CSV** and **Export raw JSON** save the entire collection, regardless of current view filters. CSV includes a raw JSON column and provenance; JSON preserves the unmodified records with collection metadata. CSV cells that could be interpreted as formulas are prefixed with an apostrophe.
 8. **New / disconnect** cancels pending work, terminates the app's PowerShell session, and clears evidence from memory. Export anything needed first. Closing the app also terminates its session. Browser login cookies are not cleared.
+
+## Customer tenant access
+
+For access-package, guest or delegated accounts, choose **Guest / delegated access** under **Exchange account access** and enter the **customer tenant ID**, not your home tenant. This is the default UI option. Exchange passes that GUID as `DelegatedOrganization` and verifies the returned managed organization. Its sign-in tenant may be your home tenant; hover the connection card to see sign-in and target tenant IDs. Use **Account in the target tenant** for native customer accounts, which verifies the returned tenant ID directly.
+
+Graph already uses `Connect-MgGraph -TenantId <customer GUID> -ContextScope Process`. Signing in through your home identity provider does not change the requested resource tenant. If the returned Graph context belongs to another tenant, the connection is closed and both tenant IDs are shown. The target tenant must have active guest access, required roles and Graph consent; the application does not assign or activate access packages. Graph and Exchange remain independently connectable.
+
+Microsoft references: [customer / guest Exchange connections](https://learn.microsoft.com/en-us/powershell/exchange/connect-to-exchange-online-powershell#connect-to-exchange-online-powershell-in-customer-organizations), [Exchange connection metadata](https://learn.microsoft.com/en-us/powershell/module/exchangepowershell/get-connectioninformation), [Graph tenant-scoped authentication](https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.authentication/connect-mggraph).
 
 ## Permissions and coverage
 
@@ -168,13 +176,15 @@ All conversions run in the renderer. Input/output stays in memory when switching
 
 ## Unified Audit Logs
 
-Connect Graph and Exchange in **Session**, then open **Microsoft 365 → UALs**. Enter one account UPN, select 24/48/72 hours, one week or a custom range. Custom dates are entered in local time and converted to UTC; the end is exclusive. Leave operations blank for all activity or use **BEC operations** to populate the suggested investigation set. Operation names can be edited before collection.
+Connect Exchange in **Session**, then open **Microsoft 365 → UALs**. Graph is not required. Enter one account UPN, select 24/48/72 hours, one week or a custom range. Custom dates are entered in local time and converted to UTC; the end is exclusive. Leave operations blank for all activity or use **BEC operations** to populate the suggested investigation set. Operation names can be edited before collection.
 
 Search and filter the captured records by IP/CIDR inclusion or exclusion, IP availability, operation, workload and result. **Apply filters** applies text/IP changes; dropdown changes apply immediately. IP exclusions take priority. An IP include filter excludes records with no parseable IP; exclusions alone retain them. IP matching uses the captured actor/client IP fields, normalizes IPv4 ports and bracketed IPv6, and does not infer location or resolve names. View a record to inspect parsed AuditData and the original returned record. Unknown result codes remain unclassified.
 
 Export CSV or JSON for the complete collection or every matching record across all pages. CSV has a `.metadata.json` companion containing provenance, query, filters, counts, coverage notes and auditing checks, including zero-event searches. A completed collection remains available when changing tabs; a new collection attempt replaces that tab's evidence and a failure leaves no exportable partial collection. New investigation clears it. Query execution, views, raw-event expansions and exports with SHA-256 hashes are recorded in `session_logs`.
 
 Collection uses `Search-UnifiedAuditLog`, 5,000-record pages and stable ReturnLargeSet sessions, initially in daily windows. Saturated 50,000-record windows are split and recollected; overlapping boundaries are deduplicated. Repeated pages, inconsistent empty pages, saturated one-second windows and query failures reject collection rather than silently accept partial evidence. HighCompleteness is enabled when the connected command exposes it. UAL has a 60-minute timeout; New investigation cancels the session.
+
+If `Search-UnifiedAuditLog` is unavailable in the connected session, the app reports the target tenant/account and audit-role prerequisites. A tenant administrator must verify the account's **View-Only Audit Logs** or **Audit Logs** role and Exchange audit-cmdlet permissions, including active access-package/delegated assignments. Reconnect after access changes. Inbox Rules retains successful current-rule results while marking rule history unavailable; unavailable history is never represented as zero changes. See [Microsoft's audit permissions guidance](https://learn.microsoft.com/en-us/purview/audit-get-started#step-2-assign-permissions-to-search-the-audit-log).
 
 Empty source searches trigger read-only checks of organization mailbox auditing, audit ingestion, mailbox settings and audit bypass. Disabled settings and failed checks are evidence gaps; the GUI and exports retain the details. These checks describe current configuration, not its historical state. A search with no events does not establish that no activity occurred: retention, ingestion delay, audited operations and scope affect coverage.
 
@@ -183,17 +193,6 @@ UserIds scopes the audited actor. Actions by other administrators or delegates t
 References: [Search-UnifiedAuditLog](https://learn.microsoft.com/en-us/powershell/module/exchangepowershell/search-unifiedauditlog?view=exchange-ps), [Mailbox auditing](https://learn.microsoft.com/en-us/purview/audit-mailboxes). Tests use offline fixtures and mocked Electron sessions; live tenant collection still needs validation against your environment.
 
 Investigation tables (sign-ins, conditional access, directory audits, risk detections, devices, consents, UALs and browser history) shorten long text to 60 characters. Each long value has an **Expand / Collapse** control that reveals the complete text within the same column width. Expansions are recorded in the session transcript. Search, raw-record details and exports continue to use the complete captured values.
-
-## Notepad
-
-Open **Toolkit → Notepad** to create, rename and switch between note tabs. Notes are **unsaved and memory only by default**. **Save locally** saves a snapshot of the selected note to `notepad.json` under Electron's user-data directory. Other tabs are not saved by that action. Subsequent edits stay unsaved until you save that note again; restarting the app restores the last explicitly saved copies.
-
-**Pop out** opens an independent Notepad window on the active tab. Both views share the same live notes; the docked editor becomes read-only while the pop-out is open. Closing the pop-out returns editing to the app and retains drafts. Closing the application discards unsaved notes and unsaved changes without automatically persisting them.
-
-Close a tab using its × button. Unsaved changes require an inline discard confirmation. Closing a saved tab retains its saved copy, available through **Open saved note**. **Remove local copy** removes the saved snapshot after confirmation while keeping current text open in memory. Note text is never passed through the investigation logger; only page navigation is logged. Local save failures retain the in-memory draft and show an error. Corrupt saved storage is preserved rather than overwritten.
-
-The Notepad supports 100 open tabs, 100 saved notes, up to 1,048,576 characters per note and a 16 MB saved-note file. Verification covers explicit saves, restart snapshots, stale edits, failed storage, pop-out handoff, transcript privacy, local-copy removal and reopening.
-
 
 ## Microsoft 365 investigation modules
 
