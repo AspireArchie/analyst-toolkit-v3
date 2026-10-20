@@ -50,7 +50,7 @@ export class PowerShellSession {
       child.stdin.on('error', () => { if (this.child === child) this.stop('PowerShell input closed. Please reconnect.'); });
     }
     return new Promise((resolve, reject) => {
-      const minutes = action === 'collect-ual' ? 60 : 15;
+      const minutes = ['collect-ual', 'collect-m365'].includes(action) ? 60 : 15;
       const timer = setTimeout(() => this.stop(`Operation timed out after ${minutes} minutes. Session cleared; reconnect to retry.`), minutes * 60_000);
       this.pending = { resolve, reject, timer };
       this.child!.stdin.write(JSON.stringify({ action, ...args }) + '\n');

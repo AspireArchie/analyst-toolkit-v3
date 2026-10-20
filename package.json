@@ -7,7 +7,7 @@
     "build": "tsc && tsc -p tsconfig.renderer.json",
     "start": "npm run build && electron .",
     "check": "tsc --noEmit && tsc -p tsconfig.renderer.json --noEmit",
-    "test:smoke": "npm run build && electron scripts/smoke.cjs && electron scripts/auth-smoke.cjs && electron scripts/logging-smoke.cjs && electron scripts/audit-smoke.cjs && electron scripts/ual-smoke.cjs && electron scripts/identity-smoke.cjs && electron scripts/osint-smoke.cjs && electron scripts/kql-smoke.cjs && electron scripts/history-smoke.cjs && electron scripts/data-tools-smoke.cjs && electron scripts/notepad-smoke.cjs",
+    "test:smoke": "npm run build && electron scripts/smoke.cjs && electron scripts/auth-smoke.cjs && electron scripts/logging-smoke.cjs && electron scripts/audit-smoke.cjs && electron scripts/ual-smoke.cjs && electron scripts/m365-smoke.cjs && electron scripts/identity-smoke.cjs && electron scripts/osint-smoke.cjs && electron scripts/kql-smoke.cjs && electron scripts/history-smoke.cjs && electron scripts/data-tools-smoke.cjs && electron scripts/notepad-smoke.cjs",
     "test": "npm run build && node --test tests/*.cjs"
   },
   "devDependencies": {

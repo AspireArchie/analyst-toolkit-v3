@@ -70,7 +70,7 @@ app.on('browser-window-created', (_, window) => {
         }
         return styles;
       })()`);
-      assert.equal(styles.length, 13); assert.ok(styles.every(style => JSON.stringify(style) === JSON.stringify(styles[0])));
+      assert.ok(styles.length >= 18); assert.ok(styles.every(style => JSON.stringify(style) === JSON.stringify(styles[0])));
       console.log('OSINT UI smoke passed'); clearTimeout(timeout); app.exit(0);
     } catch(e) { console.error(e); clearTimeout(timeout); app.exit(1); }
   });

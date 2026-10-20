@@ -1,3 +1,4 @@
+import { initializeM365Tabs } from './m365-tabs.js';
 import { initializeNotepad } from './notepad-ui.js';
 import { initializeDataTools } from './data-tools.js';
 import { initializeBrowserHistory } from './browser-history-ui.js';
@@ -92,6 +93,7 @@ function controls(): void {
   identityTabs.controls(busy, state.graph);
   auditLogs.controls(busy, state.graph);
   ualLogs.controls(busy, state.exchange);
+  m365Tabs.controls(busy, state);
   selectionControls();
   el<HTMLSelectElement>('auth-mode').disabled = busy;
   for (const id of ['install', 'connect', 'exchange', 'collect']) el<HTMLButtonElement>(id).disabled = busy;
@@ -122,6 +124,7 @@ async function operation(work: (epoch: number) => Promise<void>): Promise<void> 
 const auditLogs = initializeAuditLogs({ api: window.bec, run: operation, audit, message, generation: () => generation, state: () => state });
 const identityTabs = initializeIdentityTabs({ api: window.bec, run: operation, audit, message, generation: () => generation, state: () => state });
 const ualLogs = initializeUalLogs({ api: window.bec, run: operation, audit, message, generation: () => generation, state: () => state });
+const m365Tabs = initializeM365Tabs({ api: window.bec, run: operation, audit, message, generation: () => generation, state: () => state });
 let navigationSequence = 0;
 async function navigate(page: WorkspacePage): Promise<void> {
   const currentNavigation = ++navigationSequence;
@@ -146,6 +149,11 @@ async function navigate(page: WorkspacePage): Promise<void> {
     'risk-detections': { title: 'Risk Detections', description: 'Identity Protection risk events for the affected account.' },
     devices: { title: 'Devices', description: 'Current owned devices and incident-window registration activity.' },
     'app-consents': { title: 'App Consents', description: 'Delegated grants and consent activity affecting the account.' },
+    'inbox-rules': { title: 'Inbox Rules', description: 'Current rules and historical rule changes.' },
+    'trace-outbound': { title: 'Outbound Trace', description: 'Sender-scoped message trace metadata.' },
+    'trace-inbound': { title: 'Inbound Trace', description: 'Recipient-scoped message trace and rule candidates.' },
+    'defender-review': { title: 'Quarantine / Threat Explorer', description: 'Defender delivery, threat and URL metadata.' },
+    forwarding: { title: 'Forwarding', description: 'Mailbox forwarding and tenant transport rules.' },
     uals: { title: 'UALs', description: 'Microsoft 365 unified audit logs.' },
   };
   const { title, description } = pages[page];
@@ -162,6 +170,7 @@ async function navigate(page: WorkspacePage): Promise<void> {
   if (page === 'settings') void refreshKeys();
   el('session-module').hidden = page !== 'session';
   el('uals-module').hidden = page !== 'uals';
+  for (const kind of ['inbox-rules','trace-outbound','trace-inbound','defender-review','forwarding']) el(`${kind}-module`).hidden = page !== kind;
   for (const kind of ['risk-detections', 'devices', 'app-consents']) el(`${kind}-module`).hidden = page !== kind;
   el('sign-in-module').hidden = page !== 'sign-ins'; el('audit-module').hidden = page !== 'audit-logs';
   document.title = `${title} · BEC Bot`;
@@ -220,7 +229,7 @@ el('exchange').addEventListener('click', () => void operation(async epoch => {
 el('reset').addEventListener('click', async () => {
   generation++; busy = true; controls();
   try {
-    state = unwrap(await window.bec.reset()); collection = null; selected.clear(); clearConditionalAccess(); await auditLogs.reset(); await identityTabs.reset(); await ualLogs.reset();
+    state = unwrap(await window.bec.reset()); collection = null; selected.clear(); clearConditionalAccess(); await auditLogs.reset(); await identityTabs.reset(); await ualLogs.reset(); await m365Tabs.reset();
     connectionPhase.graph = 'idle'; connectionPhase.exchange = 'idle';
     el('session-output').textContent = 'Session cleared.';
     el('record-json').textContent = 'Select a record to inspect all returned fields.';
@@ -402,7 +411,7 @@ for (const format of ['csv', 'json'] as const) el(`export-${format}`).addEventLi
 }));
 controls();
 void operation(async () => {
-  await showLogInfo(); await navigate('session'); await render(); await auditLogs.render(); await identityTabs.render(); await ualLogs.render();
+  await showLogInfo(); await navigate('session'); await render(); await auditLogs.render(); await identityTabs.render(); await ualLogs.render(); await m365Tabs.render();
   state = unwrap(await window.bec.state());
 });
 

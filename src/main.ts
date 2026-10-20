@@ -1,3 +1,5 @@
+import { buildM365Collection, filterM365, m365Csv, m365Kinds, validateDetonation, validateM365Filters, validateM365Query } from './m365-evidence';
+import type { M365Collection, M365Kind, M365Result } from './contracts';
 import { registerNotepad } from './notepad-main';
 import { BrowserHistory } from './browser-history';
 import { validateHistoryQuery } from './browser-history-db';
@@ -25,6 +27,7 @@ let state = emptyState();
 let evidence: Collection | null = null;
 let auditEvidence: AuditCollection | null = null;
 let ualEvidence: UalCollection | null = null;
+const m365Evidence = new Map<M365Kind, M365Collection>();
 const browserHistory = new BrowserHistory();
 const identityEvidence = new Map<IdentityKind, IdentityCollection>();
 let locked = false;
@@ -140,7 +143,7 @@ function registerHandlers(): void {
         return null;
       }
       case 'navigate':
-        if (!['session', 'sign-ins', 'audit-logs', ...identityKinds, 'uals', 'toolkit', 'kql-library', 'browser-history', 'data-tools', 'notepad', 'settings'].includes(String(item.page))) throw new Error('Invalid page.');
+        if (!['session', 'sign-ins', 'audit-logs', ...identityKinds, ...m365Kinds, 'uals', 'toolkit', 'kql-library', 'browser-history', 'data-tools', 'notepad', 'settings'].includes(String(item.page))) throw new Error('Invalid page.');
         break;
       case 'nav_group_toggle':
         if (!['entra', 'm365'].includes(String(item.group)) || typeof item.open !== 'boolean') throw new Error('Invalid navigation group.');
@@ -203,7 +206,7 @@ function registerHandlers(): void {
   });
   handle('reset', async () => {
     resetting = true;
-    epoch++; session.stop(); evidence = null; auditEvidence = null; ualEvidence = null; identityEvidence.clear(); locked = false;
+    epoch++; session.stop(); evidence = null; auditEvidence = null; ualEvidence = null; identityEvidence.clear(); m365Evidence.clear(); locked = false;
     await Promise.allSettled([...inFlight]);
     resetting = false;
     return state;
@@ -247,6 +250,76 @@ function registerHandlers(): void {
     investigation.write('SIGNIN_COLLECTION_COMPLETE', { query, tenant, collectedAt: evidence.collectedAt, count: evidence.rows.length, recordIds: evidence.rows.map(row => row.id) });
     return evidence;
   }));
+  handle('collect-m365', value => exclusive(async () => {
+    const request = value as { kind: M365Kind; query: unknown };
+    if (!request || !m365Kinds.includes(request.kind)) throw Error('Invalid Microsoft 365 module.');
+    m365Evidence.delete(request.kind);
+    const query = validateM365Query(request.kind, request.query), current = epoch, tenant = state.tenant;
+    if (!state.graph && !state.exchange) throw Error('Connect in Session first.');
+    if (request.kind !== 'defender-review' && !state.exchange) throw Error('Connect Exchange in Session first.');
+    investigation.write('M365_COLLECTION_BEGIN', { kind: request.kind, query, tenant });
+    const result = await session.run('collect-m365', { kind: request.kind, ...query }) as M365Result;
+    if (current !== epoch) throw Error('Investigation reset.');
+    if (!result || !Array.isArray(result.sources) || !Array.isArray(result.aliases) || !result.aliases.every(a=>typeof a==='string') || !result.sources.every(s=>s && typeof s.name==='string' && typeof s.ok==='boolean' && Array.isArray(s.rows))) throw Error('Invalid Microsoft 365 evidence response.');
+    const snapshot = buildM365Collection(request.kind, query, tenant, result, m365Evidence.get('inbox-rules'));
+    investigation.write('M365_COLLECTION_COMPLETE', { kind: request.kind, query, tenant, count: snapshot.records.length, recordIds: snapshot.records.map(r=>r.id), sources: snapshot.sources, notes: snapshot.notes });
+    m365Evidence.set(request.kind, snapshot); return snapshot;
+  }));
+  handle('view-m365', async value => {
+    const request = value as { kind: M365Kind; filters: unknown; page: number };
+    if (!request || !m365Kinds.includes(request.kind) || !Number.isSafeInteger(request.page) || request.page < 0) throw Error('Invalid Microsoft 365 view.');
+    const filters = validateM365Filters(request.filters), snapshot = m365Evidence.get(request.kind);
+    if (!snapshot) throw Error('Collect evidence in this tab first.');
+    const rows = filterM365(snapshot,filters), page = Math.max(0, Math.min(request.page,Math.ceil(rows.length/100)-1));
+    const records = rows.slice(page*100,(page+1)*100);
+    investigation.write('M365_RESULTS_VIEW', { kind:request.kind,filters,page,matched:rows.length,recordIds:records.map(r=>r.id) });
+    return {records,page,matched:rows.length,total:snapshot.records.length};
+  });
+  handle('inspect-m365', async value => {
+    const request = value as {kind:M365Kind;id:string;field?:string;open?:boolean};
+    if (!request || !m365Kinds.includes(request.kind) || typeof request.id!=='string' || request.field!==undefined && (typeof request.field!=='string' || request.field.length>200) || request.open!==undefined && typeof request.open!=='boolean') throw Error('Invalid Microsoft 365 inspection.');
+    const record=m365Evidence.get(request.kind)?.records.find(r=>r.id===request.id);
+    if(!record)throw Error('Record is not part of the current module evidence.');
+    investigation.write('M365_RECORD_INSPECTION',{...request,record:request.open===false?undefined:record}); return record;
+  });
+  handle('export-m365', value => exclusive(async () => {
+    const request=value as {kind:M365Kind;format:string;scope:string;filters:unknown};
+    if(!request || !m365Kinds.includes(request.kind) || !['csv','json'].includes(request.format) || !['all','filtered'].includes(request.scope))throw Error('Invalid Microsoft 365 export.');
+    const filters=validateM365Filters(request.filters),snapshot=m365Evidence.get(request.kind),current=epoch;
+    if(!snapshot)throw Error('Collect evidence in this tab first.');
+    const records=request.scope==='all'?snapshot.records:filterM365(snapshot,filters);
+    const {kind,format,scope}=request;
+    const {canceled,filePath}=await dialog.showSaveDialog({title:`Export ${kind} (${scope})`,defaultPath:`${kind}-${snapshot.query.user.replace(/[^a-z\d.-]/gi,'_')}-${Date.now()}.${format}`,filters:[{name:format.toUpperCase(),extensions:[format]}]});
+    if(canceled||!filePath){investigation.write('M365_EXPORT_CANCELLED',{kind,format,scope,filters});return null;}
+    if(current!==epoch)throw Error('Investigation reset; export cancelled.');
+    const metadata={...snapshot,records:undefined,exportScope:scope,filters,sourceCount:snapshot.records.length,exportedCount:records.length};
+    const content=format==='csv'?m365Csv(snapshot,records,scope,filters):JSON.stringify({...metadata,records},null,2);
+    investigation.write('M365_EXPORT_BEGIN',{kind,format,scope,filePath,filters,count:records.length,recordIds:records.map(r=>r.id)});
+    await writeFile(filePath,content,'utf8');
+    investigation.write('M365_EXPORT_FILE_WRITTEN',{filePath,bytes:Buffer.byteLength(content),sha256:createHash('sha256').update(content).digest('hex')});
+    if(format==='csv'){
+      const metadataPath=`${filePath}.metadata.json`,report=JSON.stringify(metadata,null,2);
+      investigation.write('M365_METADATA_EXPORT_BEGIN',{filePath:metadataPath});await writeFile(metadataPath,report,'utf8');
+      investigation.write('M365_EXPORT_FILE_WRITTEN',{filePath:metadataPath,sha256:createHash('sha256').update(report).digest('hex')});
+    }
+    investigation.write('M365_EXPORT_COMPLETE',{kind,format,scope,filePath,count:records.length});return filePath;
+  }));
+  handle('capture-detonation', value => exclusive(async () => {
+    const report=validateDetonation(value),snapshot=m365Evidence.get('defender-review');
+    if(!snapshot)throw Error('Collect Defender review evidence first, including source availability.');
+    const id='detonation:'+createHash('sha256').update(JSON.stringify(report)).digest('hex');
+    if(snapshot.records.some(r=>r.id===id))throw Error('This detonation capture is already recorded.');
+    const record={id,source:'Manual detonation capture',values:{UPN:snapshot.query.user,'Time UTC':report.observedAt,'Subject / URL':report.url,'Status / verdict':report.verdict,'Detection methods':'Manual portal report capture'},findings:['Analyst-captured observation; review the referenced source report'],raw:{...report,capturedAt:new Date().toISOString(),capturedBy:state.account,query:snapshot.query,provenance:'Manually recorded report; no URL visited or detonated by BEC Bot'}};
+    investigation.write('M365_DETONATION_CAPTURE',{kind:snapshot.kind,record});snapshot.records.push(record);
+    const manual=snapshot.sources.find(s=>s.name==='Manual detonation capture');
+    if(manual){manual.returned++;manual.checkedAt=record.raw.capturedAt;}else snapshot.sources.push({name:'Manual detonation capture',ok:true,returned:1,checkedAt:record.raw.capturedAt,metadata:{provenance:'Analyst observation; see referenced report'}});
+    return snapshot;
+  }));
+  handle('m365-portal', async portal => {
+    if(portal!=='explorer'&&portal!=='quarantine')throw Error('Unknown Microsoft 365 portal.');
+    const url=portal==='explorer'?'https://security.microsoft.com/threatexplorerv3':'https://security.microsoft.com/quarantine';
+    investigation.write('M365_PORTAL_OPEN',{portal,url});await shell.openExternal(url);return null;
+  });
   handle('collect-ual', value => exclusive(async () => {
     ualEvidence = null;
     if (!state.exchange) throw new Error('Connect Exchange in Session first.');

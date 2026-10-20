@@ -43,7 +43,7 @@ export interface IdentityRow { key: string; source: 'risk' | 'risk-user' | 'risk
 export interface RiskSource { source: string; ok: boolean; count?: number; error?: string; checkedAt: string }
 export interface IdentityResult { userId: string; userPrincipalName?: string; rows: any[]; relatedAudits?: DirectoryAudit[]; riskyUser?: Record<string, any> | null; riskHistory?: Record<string, any>[]; riskySignIns?: SignIn[]; riskSources?: RiskSource[] }
 export interface IdentityCollection { kind: IdentityKind; query: IdentityQuery; userId: string; tenant: string; collectedAt: string; columns: string[]; rows: IdentityRow[]; coverage: string; riskSources?: RiskSource[] }
-export type WorkspacePage = 'session' | 'sign-ins' | 'audit-logs' | IdentityKind | 'uals' | 'toolkit' | 'kql-library' | 'browser-history' | 'data-tools' | 'notepad' | 'settings';
+export type WorkspacePage = M365Kind | 'session' | 'sign-ins' | 'audit-logs' | IdentityKind | 'uals' | 'toolkit' | 'kql-library' | 'browser-history' | 'data-tools' | 'notepad' | 'settings';
 export type UiAuditEvent =
   | { action: 'table_cell_toggle'; page: WorkspacePage; id: string; field: string; open: boolean }
   | { action: 'navigate'; page: WorkspacePage }
@@ -60,6 +60,12 @@ export type UiAuditEvent =
   | { action: 'details_toggle'; section: 'session-output' | 'record-details' | 'ca-policy-details' | 'audit-record-details' | 'ual-record-details' | `${IdentityKind}-details`; open: boolean }
   | { action: 'range_change'; range: string; start: string; end: string };
 export interface BecApi {
+  collectM365(kind: M365Kind, query: M365Query): Promise<Reply<M365Collection>>;
+  viewM365(kind: M365Kind, filters: M365Filters, page: number): Promise<Reply<M365View>>;
+  inspectM365(kind: M365Kind, id: string, field?: string, open?: boolean): Promise<Reply<M365Record>>;
+  exportM365(kind: M365Kind, format: 'csv' | 'json', scope: 'all' | 'filtered', filters: M365Filters): Promise<Reply<string | null>>;
+  captureDetonation(report: DetonationCapture): Promise<Reply<M365Collection>>;
+  openM365Portal(portal: 'explorer' | 'quarantine'): Promise<Reply<null>>;
   importHistory(browser: HistoryBrowser): Promise<Reply<HistorySource | null>>;
   queryHistory(query: HistoryQuery): Promise<Reply<HistoryResults>>;
   copyHistory(query: HistoryQuery, mode: 'urls' | 'visits', visitId?: string): Promise<Reply<number>>;
@@ -92,7 +98,6 @@ export interface BecApi {
 export type Provider = 'virustotal' | 'abuseipdb' | 'ipdata';
 export interface ProviderResult { provider: Provider; status: 'ok' | 'error' | 'skipped'; message?: string; data?: Record<string, any> }
 export interface OsintReport { indicator: string; kind: 'ip' | 'md5' | 'sha1' | 'sha256'; queriedAt: string; results: ProviderResult[] }
-
 export type HistoryBrowser = 'auto' | 'chrome' | 'edge' | 'firefox';
 export interface HistorySource {
   id: string; file: string; browser: string; importedAt: string; visits: number; pages: number;
@@ -122,3 +127,13 @@ export interface NoteApi {
   popOut(id: string): Promise<Reply<NoteState>>;
   onChange(callback: (state: NoteState) => void): () => void;
 }
+
+export type M365Kind = 'inbox-rules' | 'trace-outbound' | 'trace-inbound' | 'defender-review' | 'forwarding';
+export interface M365Query extends SignInQuery { party: string }
+export interface M365Source { name: string; ok: boolean; rows: Record<string, any>[]; metadata?: Record<string, any>; error?: string; checkedAt: string }
+export interface M365Result { sources: M365Source[]; aliases: string[] }
+export interface M365Record { id: string; source: string; values: Record<string, string>; findings: string[]; raw: Record<string, any> }
+export interface M365Filters { search: string; source: string; flagged: boolean }
+export interface M365Collection { kind: M365Kind; query: M365Query; tenant: string; collectedAt: string; aliases: string[]; columns: string[]; records: M365Record[]; sources: { name: string; ok: boolean; returned: number; metadata?: Record<string, any>; error?: string; checkedAt: string }[]; notes: string[] }
+export interface M365View { records: M365Record[]; matched: number; total: number; page: number }
+export interface DetonationCapture { url: string; verdict: 'malicious' | 'suspicious' | 'clean' | 'unknown'; observedAt: string; reference: string; notes: string }

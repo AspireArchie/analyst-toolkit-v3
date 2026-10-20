@@ -11,6 +11,7 @@ function Read-UalRange([datetime]$Start, [datetime]$End, $Request, $Stats, [int]
     $Stats.windows++
     while ($true) {
         $parameters = @{ StartDate = $Start; EndDate = $End; UserIds = @($Request.user); ResultSize = 5000; SessionId = $sessionId; SessionCommand = 'ReturnLargeSet'; ErrorAction = 'Stop' }
+        if ($Request.omitUserFilter) { $parameters.Remove('UserIds') }
         if (@($Request.operations).Count) { $parameters.Operations = @($Request.operations) }
         if ($Stats.highCompleteness) { $parameters.HighCompleteness = $true }
         Write-QueryAudit 'Search-UnifiedAuditLog' $parameters

@@ -3,6 +3,12 @@ import type { BecApi, NoteApi } from './contracts';
 
 // Expose named operations only; the page cannot execute arbitrary PowerShell.
 const api: BecApi = {
+  collectM365: (kind, query) => ipcRenderer.invoke('bec:collect-m365', { kind, query }),
+  viewM365: (kind, filters, page) => ipcRenderer.invoke('bec:view-m365', { kind, filters, page }),
+  inspectM365: (kind, id, field, open) => ipcRenderer.invoke('bec:inspect-m365', { kind, id, field, open }),
+  exportM365: (kind, format, scope, filters) => ipcRenderer.invoke('bec:export-m365', { kind, format, scope, filters }),
+  captureDetonation: (report) => ipcRenderer.invoke('bec:capture-detonation', report),
+  openM365Portal: (portal) => ipcRenderer.invoke('bec:m365-portal', portal),
   importHistory: (browser) => ipcRenderer.invoke('bec:history-import', browser),
   queryHistory: (query) => ipcRenderer.invoke('bec:history-query', query),
   copyHistory: (query, mode, visitId) => ipcRenderer.invoke('bec:history-copy', { query, mode, visitId }),

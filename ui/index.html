@@ -11,6 +11,8 @@
 <body>
   <aside class="sidebar">
     <div class="brand"><img src="assets/aspire.png" alt="Aspire" /><span>Analyst Toolkit</span></div>
+    <div class="nav-label">Toolkit · BAU investigations</div>
+    <nav aria-label="BAU tools"><button class="nav-item" data-page="toolkit"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="7" /><path d="m15 15 6 6M3 10h14M10 3c-4 4-4 10 0 14 4-4 4-10 0-14" /></svg><span>OSINT Toolkit</span><span class="nav-arrow" aria-hidden="true">↗</span></button><button class="nav-item" data-page="kql-library"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v18H5a2 2 0 0 1 0-4h14M5 3a2 2 0 0 0-2 2v14m7-12-2 3 2 3m4-6 2 3-2 3" /></svg><span>KQL Library</span><span class="nav-arrow" aria-hidden="true">↗</span></button><button class="nav-item" data-page="browser-history"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l4 2" /></svg><span>Browser History</span><span class="nav-arrow" aria-hidden="true">↗</span></button><button class="nav-item" data-page="data-tools"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5-6 7 6 7m8-14 6 7-6 7M14 3l-4 18" /></svg><span>Data Tools</span><span class="nav-arrow" aria-hidden="true">↗</span></button><button class="nav-item" data-page="notepad"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v18H5zM8 8h8M8 12h8M8 16h5" /></svg><span>Notepad</span><span class="nav-arrow" aria-hidden="true">↗</span></button></nav>
     <div class="nav-label">BEC Bot · Compromises</div>
     <nav aria-label="Investigation tools">
       <button class="nav-item active" data-page="session" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3v5m8-5v5M5 8h14v4a7 7 0 0 1-14 0zm7 11v3" /></svg><span>Session</span><span class="nav-arrow" aria-hidden="true">↗</span></button>
@@ -29,10 +31,14 @@
       <summary><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" /></svg><span>Microsoft 365</span></summary>
       <nav aria-label="Microsoft 365 tools">
         <button class="nav-item" data-page="uals"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18H6zM9 8h6M9 12h6M9 16h4" /></svg><span>UALs</span><span class="nav-arrow" aria-hidden="true">↗</span></button>
+        <button class="nav-item" data-page="inbox-rules"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM7 8h10M7 12h10M7 16h6" /></svg><span>Inbox Rules</span><span class="nav-arrow" aria-hidden="true">↗</span></button>
+        <button class="nav-item" data-page="trace-outbound"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h17m-6-6 6 6-6 6" /></svg><span>Outbound Trace</span><span class="nav-arrow" aria-hidden="true">↗</span></button>
+        <button class="nav-item" data-page="trace-inbound"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12H4m6-6-6 6 6 6" /></svg><span>Inbound Trace</span><span class="nav-arrow" aria-hidden="true">↗</span></button>
+        <button class="nav-item" data-page="defender-review"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 3 7v6c0 5 9 8 9 8s9-3 9-8V7zM9 12l2 2 4-4" /></svg><span>Quarantine / Threat Explorer</span><span class="nav-arrow" aria-hidden="true">↗</span></button>
+        <button class="nav-item" data-page="forwarding"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h11v12H3zM14 12h7m-3-3 3 3-3 3" /></svg><span>Forwarding</span><span class="nav-arrow" aria-hidden="true">↗</span></button>
+
       </nav>
     </details>
-    <div class="nav-label">Toolkit · BAU investigations</div>
-    <nav aria-label="BAU tools"><button class="nav-item" data-page="toolkit"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="7" /><path d="m15 15 6 6M3 10h14M10 3c-4 4-4 10 0 14 4-4 4-10 0-14" /></svg><span>OSINT Toolkit</span><span class="nav-arrow" aria-hidden="true">↗</span></button><button class="nav-item" data-page="kql-library"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v18H5a2 2 0 0 1 0-4h14M5 3a2 2 0 0 0-2 2v14m7-12-2 3 2 3m4-6 2 3-2 3" /></svg><span>KQL Library</span><span class="nav-arrow" aria-hidden="true">↗</span></button><button class="nav-item" data-page="browser-history"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l4 2" /></svg><span>Browser History</span><span class="nav-arrow" aria-hidden="true">↗</span></button><button class="nav-item" data-page="data-tools"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5-6 7 6 7m8-14 6 7-6 7M14 3l-4 18" /></svg><span>Data Tools</span><span class="nav-arrow" aria-hidden="true">↗</span></button><button class="nav-item" data-page="notepad"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v18H5zM8 8h8M8 12h8M8 16h5" /></svg><span>Notepad</span><span class="nav-arrow" aria-hidden="true">↗</span></button></nav>
     <div class="nav-label">Workspace</div>
     <nav aria-label="Preferences"><button class="nav-item" data-page="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h16" /><rect x="8" y="3" width="4" height="4" rx="1" /><rect x="14" y="10" width="4" height="4" rx="1" /><rect x="6" y="17" width="4" height="4" rx="1" /></svg><span>Settings</span><span class="nav-arrow" aria-hidden="true">↗</span></button></nav>
     <div class="sidebar-bottom"><span class="status-dot"></span> Local workspace<span class="version">v0.1</span></div>
@@ -95,6 +101,11 @@
           <details id="audit-record-details"><summary>Selected audit event · raw data and modified properties</summary><pre id="audit-record-json">Select an event to inspect its full record.</pre></details>
         </section>
       </section>
+      <section id="inbox-rules-module" hidden></section>
+      <section id="trace-outbound-module" hidden></section>
+      <section id="trace-inbound-module" hidden></section>
+      <section id="defender-review-module" hidden></section>
+      <section id="forwarding-module" hidden></section>
       <section id="uals-module" class="query-panel" hidden>
       </section>
       <section id="risk-detections-module" class="identity-module" hidden></section>

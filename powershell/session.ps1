@@ -88,6 +88,7 @@ function Read-RelatedAuditEvents($Request, [string]$UserId, [string[]]$RelatedId
 
 . "$PSScriptRoot/ual.ps1"
 . "$PSScriptRoot/identity-risk.ps1"
+. "$PSScriptRoot/m365.ps1"
 while ($null -ne ($line = [Console]::ReadLine())) {
     try {
         $request = $line | ConvertFrom-Json
@@ -103,7 +104,7 @@ while ($null -ne ($line = [Console]::ReadLine())) {
             'connect' {
                 if ($script:graph) { throw 'Reset the current investigation before changing tenant.' }
                 Require-Module 'Microsoft.Graph.Authentication'
-                $parameters = @{ TenantId = $request.tenant; Scopes = @('AuditLog.Read.All', 'Policy.Read.ConditionalAccess', 'User.ReadBasic.All', 'Directory.Read.All', 'IdentityRiskEvent.Read.All', 'IdentityRiskyUser.Read.All'); ContextScope = 'Process'; NoWelcome = $true }
+                $parameters = @{ TenantId = $request.tenant; Scopes = @('AuditLog.Read.All', 'Policy.Read.ConditionalAccess', 'User.ReadBasic.All', 'Directory.Read.All', 'IdentityRiskEvent.Read.All', 'IdentityRiskyUser.Read.All', 'ThreatHunting.Read.All'); ContextScope = 'Process'; NoWelcome = $true }
                 Write-Host 'Requesting a Microsoft device code. Enter the code shown below on the Microsoft sign-in page.'
                 # Device flow works without a WAM parent window or a custom app registration.
                 # The Electron main process opens the browser when instructions arrive.
@@ -251,6 +252,7 @@ while ($null -ne ($line = [Console]::ReadLine())) {
                 }
                 $data = @{ rows = @($all | Sort-Object createdDateTime -Descending) }
             }
+            'collect-m365' { $data = Read-M365Collection $request }
             'collect-ual' { $data = Read-UalCollection $request }
             default { throw 'Unsupported session operation.' }
         }
